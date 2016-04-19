@@ -1,0 +1,38 @@
+---
+- hosts: all
+  accelerate: true
+  remote_user: vagrant
+  vars:
+    jenkins_download_url: "http://pkg.jenkins-ci.org/debian-rc/binary/jenkins_2.0_all.deb"
+    jenkins_installation_package_name: "jenkins_2.0_all"
+    jenkins_package_name: "jenkins"
+
+  tasks:
+    ###############################################
+    # General setup, packages, ulimits etc
+    ###############################################
+
+    - name: Check if Jenkins2 is already installed
+      command: "dpkg-query -W {{ jenkins_package_name }}"
+      register: my_package_check_deb
+      failed_when: my_package_check_deb.rc > 1
+      changed_when: my_package_check_deb.rc == 1
+
+
+
+    - name: Download Jenkins2 installation package
+      get_url:
+        url="{{ jenkins_download_url }}"
+        dest="/tmp/{{ jenkins_installation_package_name }}.deb"
+      # when: vagrant_check_deb.rc == 1
+
+    - name: Install Jenkins2
+      apt: deb="/tmp/{{ jenkins_installation_package_name }}.deb"
+      sudo: true
+      # when: vagrant_check_deb.rc == 1
+
+    - name: Set Jenkins2 start at server startup
+      service: name=jenkins enabled=yes
+
+    - name: Startup Jenkins2
+      service: name=jenkins state=started
